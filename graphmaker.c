@@ -34,9 +34,27 @@ void PrintGraph(Graph *graph)
     {
         if(i/10 == 0)putchar(' ');
         if(graph->directed)
-            printf("%d: %d -> %d\n",i,graph->edges[i].bottom,graph->edges[i].top);
+        {
+            if(graph->edges[i].top != -1)
+            {
+                printf("%d: %d -> %d\n",i,graph->edges[i].bottom,graph->edges[i].top);
+            }
+            else
+            {
+                printf("%d: %d\n",i,graph->edges[i].bottom);
+            }
+        }
         else
-            printf("%d: %d -- %d\n",i,graph->edges[i].bottom,graph->edges[i].top);
+        {
+            if(graph->edges[i].top != -1)
+            {
+                printf("%d: %d -- %d\n",i,graph->edges[i].bottom,graph->edges[i].top);
+            }
+            else
+            {
+                printf("%d: %d\n",i,graph->edges[i].bottom);
+            }
+        }   
     }
 }
 
@@ -49,6 +67,7 @@ void clearBuffer()
 Graph *MakeGraph(char *fileName)
 {
     int value1, value2;
+    char value; 
     char Commads = '\0';
     FILE *f = fopen(fileName,"r");
     if(f == NULL)
@@ -58,19 +77,63 @@ Graph *MakeGraph(char *fileName)
     }
 
     Graph *graph = (Graph *)malloc(sizeof(Graph));
-
-    for(graph->countOfpoints = 0;(fscanf(f,"%d",&value1)!=EOF);graph->countOfpoints++); //считаем кол-во вершин
-    fclose(f);
     
-    graph->countOfEdges = graph->countOfpoints / 2;
-    graph->edges = (Edge*)malloc(sizeof(Edge) * graph->countOfEdges);
+    for(graph->countOfpoints = 0;(value = fgetc(f)) != EOF;)
+    {
+        if(value != '\n')
+        {
+            if(value == ' ')
+                graph->countOfpoints++;
+        }
+        else
+        {
+            graph->countOfpoints++;
+            graph->countOfEdges++;
+        }
+    }
+    graph->countOfEdges++;
+    fclose(f);
 
+    // for(graph->countOfpoints = 0;(fscanf(f,"%d",&value1)!=EOF);graph->countOfpoints++); //считаем кол-во вершин
+    // fclose(f);
+
+    // fopen(fileName,"r");
+    // for(int i = 0;(value = fgetc(f)) != EOF;)
+    //     if(value == '\n')graph->countOfEdges++;
+    // fclose(f);
+    // graph->countOfEdges++;
+    
+    graph->edges = (Edge*)malloc(sizeof(Edge) * graph->countOfEdges);
     fopen(fileName,"r");
 
-    for(int i = 0;(fscanf(f,"%d%d",&value1,&value2)!=EOF);i++)
+    for(int i = 0;(value = fgetc(f)) != EOF;)
     {
-        graph->edges[i].bottom = value1;
-        graph->edges[i].top = value2;
+        if(value != '\n')
+        {
+            graph->edges[i].bottom = value - '0';
+            value = fgetc(f);
+            if(value != '\n')
+            {
+                value = fgetc(f);
+                if(value >= '0' && value <= '9')
+                {
+                    graph->edges[i].top = value - '0';
+                }
+                else
+                {
+                    graph->edges[i].top = -1;
+                }
+                if(value != '\n')
+                    value = fgetc(f);
+                i++;
+            }
+            else
+            {
+                graph->edges[i].top = -1;
+                i++;
+            }
+        }
+        else i++;
     }
 
     fclose(f);
@@ -114,9 +177,27 @@ void MakeDotFile(Graph *graph)
     for(int i = graph->countOfEdges - 1;i>=0;i--)
     {
         if(graph->directed)
-            fprintf(f,"%d -> %d\n",graph->edges[i].bottom,graph->edges[i].top);
+        {
+            if(graph->edges[i].top != -1)
+            {
+                fprintf(f,"%d -> %d\n",graph->edges[i].bottom,graph->edges[i].top);
+            }
+            else
+            {
+                fprintf(f,"%d\n",graph->edges[i].bottom);
+            }
+        }
         else
-            fprintf(f,"%d -- %d\n",graph->edges[i].bottom,graph->edges[i].top);
+        {
+            if(graph->edges[i].top != -1)
+            {
+                fprintf(f,"%d -- %d\n",graph->edges[i].bottom,graph->edges[i].top);
+            }
+            else
+            {
+                fprintf(f,"%d\n",graph->edges[i].bottom);
+            }
+        }   
     }
     fputc('}',f);
     fclose(f);
@@ -196,7 +277,7 @@ void DeepFirstSeatch(Graph *graph,int point,Array *VisitedPoints)
     //     printf("%d ",(*VisitedPoints).mas[i]);
     // putchar('\n');
 }
-
+     
 int CountOfPersonalPoints(Graph *graph)
 {
     int trigger;
